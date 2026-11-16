@@ -98,7 +98,13 @@ path "kv/metadata/{{identity.entity.aliases.<userpass accessor>.name}}/*" { capa
 ```
 
 `LIST kv/metadata/` with alice's token returns 403 from Vault; through the
-proxy it returns `alice/ apps/ shared/ team-a/ team-b/`. `vault-kv-reach tree`
+proxy it returns `alice/ apps/ shared/ team-a/ team-b/`. In the Vault 2.2.2 UI
+(screenshots from the CI run):
+
+| Vault directly | Through vault-kv-reach proxy |
+|---|---|
+| ![Vault UI without the proxy: only a field to type a path](docs/ui-without-proxy.png) | ![Vault UI through the proxy: folders alice/, apps/, shared/, team-a/, team-b/](docs/ui-with-proxy.png) |
+ `vault-kv-reach tree`
 against Vault 2.2.2:
 
 ```
@@ -146,6 +152,11 @@ names; `tree` prints them as patterns, the proxy leaves them out.
   LISTs, reads, root tokens and invalid tokens pass through unchanged, and
   compares the `tree` result with `sys/capabilities` for alice's token on
   every secret, asked with the root token.
+- `e2e/ui/ui.mjs` logs into the web UI with alice's token in headless Chrome
+  (DevTools protocol, no dependencies), once through the proxy and once
+  directly. Through the proxy the mount page must list `alice/`, `shared/`,
+  `team-a/`, `team-b/` and not `hidden/`, `bob/`, `top`, and `team-b/` must
+  list `config` and not `other`; directly, `team-b/` must not appear.
 - CI runs this against Vault 2.2.2, 1.21.4, latest and OpenBao 2.7.2, 2.5.5,
   latest, and weekly on Mondays.
 
@@ -162,8 +173,8 @@ names; `tree` prints them as patterns, the proxy leaves them out.
 - `resultant-acl` is an internal endpoint of Vault without stability promise.
 - Namespaces are passed through but were not tested (Vault Enterprise,
   OpenBao namespaces).
-- The Vault UI was not tested through the proxy; tests cover the HTTP API that
-  the UI and CLI use.
+- The UI test covers the KV list pages of the versions above. Other UI pages
+  (for example other secrets engines) are passed through unchanged.
 - The proxy is a policy-aware listing aid. It does not grant access: reads and
   writes still go to Vault with the user's token.
 
