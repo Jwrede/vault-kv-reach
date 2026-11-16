@@ -153,9 +153,9 @@ names; `tree` prints them as patterns, the proxy leaves them out.
 
 - Only names written in policies can be shown. `+` segments and prefix globs
   like `db-*` cannot be enumerated without `list`.
-- OpenBao (checked with 2.7.2) leaves rules with `+` out of
+- OpenBao (checked: 2.5.5, 2.7.2) leaves rules with `+` out of
   `resultant-acl`, so such rules are not used there. The test detects this
-  and checks the rest; Vault 2.2.2 reports them.
+  and checks the rest. Vault 1.21.4 and 2.2.2 report them.
 - A derived name is shown when the policy grants something on it; the secret
   does not have to exist. `tree` checks existence only when the token can read
   the metadata.
