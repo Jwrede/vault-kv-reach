@@ -36,4 +36,18 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-      - run: IMAGE=${{ matrix.image }} e2e/run.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: e2e (API and web UI)
+        env:
+          VKR_E2E_CHROME: google-chrome
+          UI_SHOTS: ${{ runner.temp }}/shots
+        run: |
+          mkdir -p "$UI_SHOTS"
+          IMAGE=${{ matrix.image }} e2e/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-${{ strategy.job-index }}
+          path: ${{ runner.temp }}/shots

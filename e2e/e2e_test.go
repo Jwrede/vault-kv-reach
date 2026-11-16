@@ -8,10 +8,12 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"os/exec"
 	"reflect"
 	"sort"
 	"strings"
@@ -229,6 +231,28 @@ func TestE2E(t *testing.T) {
 		}
 		if r := call(t, srv.URL, "LIST", "kv/metadata/", "not-a-token", nil); r.code != 403 {
 			t.Errorf("invalid token: %d, want 403", r.code)
+		}
+	})
+
+	t.Run("web UI through the proxy", func(t *testing.T) {
+		chrome := os.Getenv("VKR_E2E_CHROME")
+		if chrome == "" {
+			t.Skip("VKR_E2E_CHROME not set")
+		}
+		ln, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatal(err)
+		}
+		hs := &http.Server{Handler: proxy.New(proxy.Config{Upstream: u})}
+		go hs.Serve(ln)
+		defer hs.Close()
+		for _, run := range [][2]string{{"http://" + ln.Addr().String(), "proxy"}, {addr, "direct"}} {
+			cmd := exec.Command("node", "ui/ui.mjs", run[0], chrome, alice, run[1])
+			out, err := cmd.CombinedOutput()
+			t.Logf("%s", out)
+			if err != nil {
+				t.Errorf("ui.mjs %s: %v", run[1], err)
+			}
 		}
 	})
 
