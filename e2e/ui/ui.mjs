@@ -21,11 +21,18 @@ let failures = 0;
 const ok = (cond, what) => { console.log(`${cond ? 'ok  ' : 'FAIL'} [${mode}] ${what}`); if (!cond) failures++; };
 
 let ws;
-for (let i = 0; i < 80 && !ws; i++) {
+// Chrome on a busy CI runner has taken more than 20 s to open its DevTools port.
+for (let i = 0; i < 240 && !ws; i++) {
   try {
     const t = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
     ws = new WebSocket(t.find((x) => x.type === 'page').webSocketDebuggerUrl);
   } catch { await sleep(250); }
+}
+if (!ws) {
+  console.log(`FAIL [${mode}] Chrome did not open its DevTools port ${port} within 60 s`);
+  chrome.kill();
+  rmSync(profile, { recursive: true, force: true });
+  process.exit(1);
 }
 await new Promise((r) => { ws.onopen = r; });
 let id = 0;
